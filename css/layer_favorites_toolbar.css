@@ -1,0 +1,326 @@
+.o-ui .top-center {
+  top: 1rem;
+  transition: top 0.3s ease-in-out;
+}
+
+.o-ui .top-center.top-bar-visible {
+  top: 3.5rem;
+}
+
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #fff;
+  padding: 8px; /* Updated padding for desktop */
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 12px; /* Spacing between groups */
+  transition: transform 0.3s ease-in-out;
+  z-index: 1000;
+  box-sizing: border-box;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.2);
+  max-width: 600px; /* Width for big screens */
+}
+
+.top-bar.hidden {
+  transform: translateX(-50%) translateY(-100%);
+}
+
+.top-bar.no-transition {
+  transition: none !important;
+}
+
+/* Container for left group (clearButton + loadSelect) and right group (saveInput + saveButton + deleteButton) */
+.group-container {
+  display: flex;
+  gap: 8px; /* Spacing between elements */
+  flex: 1; /* Equal widths for groups in unwrapped state */
+  min-width: 150px; /* Prevent groups from collapsing too small */
+  box-sizing: border-box;
+}
+
+.top-bar button {
+  padding: 0.5rem; /* Unified padding for all buttons */
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  background-color: #f5f5f5;
+  color: #000;
+  border-radius: 50%; /* Circular buttons */
+  box-sizing: border-box;
+  min-width: 34px; /* Adjusted for smaller icons */
+}
+
+.top-bar button:hover {
+  background-color: #e0e0e0;
+}
+
+/* Specific styles for clearButton with SVG icon */
+.top-bar button.clear-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.top-bar button.clear-button svg {
+  width: 18px; /* Smaller icon size */
+  height: 18px;
+}
+
+/* Specific styles for saveButton with SVG icon */
+.top-bar button.save-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.top-bar button.save-button svg {
+  width: 18px; /* Smaller icon size */
+  height: 18px;
+}
+
+/* Specific styles for deleteButton with SVG icon */
+.top-bar button.delete-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.top-bar button.delete-button svg {
+  width: 18px; /* Smaller icon size */
+  height: 18px;
+}
+
+/* Apply fill to all button SVGs */
+.top-bar button.clear-button svg,
+.top-bar button.save-button svg,
+.top-bar button.delete-button svg {
+  fill: #4a4a4a;
+}
+
+.top-bar select {
+  padding: 2px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background-color: #f5f5f5;
+  color: #000;
+  border-radius: 2em;
+  flex: 1;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.top-bar select:hover {
+  background-color: #e0e0e0;
+}
+
+.top-bar select option[value=""] {
+  color: #ccc;
+}
+
+.top-bar select option:not([value=""]) {
+  color: #000;
+}
+
+.top-bar input {
+  padding: 2px 16px;
+  font-size: 16px;
+  border: none;
+  background-color: #f5f5f5;
+  color: #000;
+  border-radius: 2em;
+  flex: 1;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.top-bar input:focus {
+  outline: none; /* Remove focus outline */
+  border: none; /* Ensure no border on focus */
+}
+
+.top-bar input::placeholder {
+  color: #ccc;
+}
+
+.hover-trigger {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 3px;
+  z-index: 999;
+}
+
+@media screen and (max-width: 768px) {
+  .top-bar {
+    padding: 6px;
+    gap: 8px;
+    max-width: 360px; /* Accommodates buttons */
+    width: calc(100% - 12px); /* Respect 6px left + right padding */
+    justify-content: center;
+  }
+
+  .group-container {
+    gap: 6px;
+    width: 100%; /* Full width in wrapped state */
+    max-width: calc(50% - 4px); /* Equal group widths, accounting for gap */
+    flex: none; /* Remove flex-grow */
+    min-width: 0;
+  }
+
+  .top-bar button {
+    padding: 0.5rem;
+    font-size: 14px;
+    border: none;
+    min-width: 30px; /* Adjusted for smaller icons */
+  }
+
+  .top-bar select {
+    padding: 2px 12px;
+    font-size: 14px;
+    border: none;
+    border-radius: 2em;
+    max-width: 130px; /* Balances group widths */
+  }
+
+  .top-bar select option[value=""] {
+    color: #ccc;
+  }
+
+  .top-bar select option:not([value=""]) {
+    color: #000;
+  }
+
+  .top-bar input {
+    padding: 2px 12px;
+    font-size: 14px;
+    border: none;
+    border-radius: 2em;
+    max-width: 130px; /* Balances group widths */
+  }
+
+  .top-bar input:focus {
+    outline: none; /* Remove focus outline */
+    border: none; /* Ensure no border on focus */
+  }
+
+  .hover-trigger {
+    height: 30px;
+  }
+}
+
+/* Handle very small screens to ensure equal group widths and padding */
+@media screen and (max-width: 400px) {
+  .top-bar {
+    padding: 6px;
+    gap: 6px;
+    width: calc(100% - 12px); /* Respect 6px left + right padding */
+    max-width: 320px; /* Accommodates buttons */
+  }
+
+  .group-container {
+    gap: 4px;
+    width: 100%;
+    max-width: calc(50% - 3px); /* Equal group widths, account for gap */
+    flex: none;
+  }
+
+  .top-bar button {
+    padding: 0.5rem;
+    font-size: 12px;
+    min-width: 26px; /* Adjusted for smaller icons */
+  }
+
+  .top-bar select {
+    padding: 2px 10px;
+    font-size: 12px;
+    max-width: 110px; /* Balances group widths */
+  }
+
+  .top-bar input {
+    padding: 2px 10px;
+    font-size: 12px;
+    max-width: 110px; /* Balances group widths */
+  }
+
+  .top-bar input:focus {
+    outline: none; /* Remove focus outline */
+    border: none; /* Ensure no border on focus */
+  }
+}
+
+/* Inverterade färger när Autosläck är PÅ */
+.top-bar button.clear-button.auto-clear-active {
+  background-color: #333 !important;
+  color: #fff;
+}
+
+.top-bar button.clear-button.auto-clear-active svg {
+  fill: #fff !important;
+}
+
+.top-bar button.clear-button.auto-clear-active:hover {
+  background-color: #555 !important;
+}
+
+/* .top-center (oförändrat) */
+.o-ui .top-center {
+  top: 1rem;
+  transition: top 0.3s ease-in-out;
+}
+.o-ui .top-center.top-bar-visible {
+  top: 3.5rem;
+}
+
+/* LÅSIKON – till vänster om släckknappen */
+.top-bar .lock-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  background-color: #f5f5f5;
+  color: #000;
+  border-radius: 50%;
+  box-sizing: border-box;
+  min-width: 34px;
+}
+
+.top-bar .lock-button:hover {
+  background-color: #e0e0e0;
+}
+
+.top-bar .lock-button svg {
+  width: 18px;
+  height: 18px;
+  fill: #4a4a4a;
+}
+
+/* INVERTERADE FÄRGER I LÅST LÄGE */
+.top-bar .lock-button.locked {
+  background-color: #333 !important;
+}
+
+.top-bar .lock-button.locked svg {
+  fill: #fff !important;
+}
+
+.top-bar .lock-button.locked:hover {
+  background-color: #555 !important;
+}
+
+/* DÖLJ LÅSKNAPP PÅ SMÅ SKÄRMAR */
+@media screen and (max-width: 768px) {
+  .top-bar .lock-button {
+    display: none !important;
+  }
+}
