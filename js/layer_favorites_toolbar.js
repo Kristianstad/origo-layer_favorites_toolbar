@@ -285,7 +285,7 @@ function initLayerFavoritesToolbar() {
     touchStartY = t.clientY;
     const r = hoverTrigger.getBoundingClientRect();
     touchStartedInTrigger = t.clientY >= r.top && t.clientY <= r.bottom && t.clientX >= r.left && t.clientX <= r.right;
-  });
+  }, { passive: true });
 
   document.addEventListener('touchend', e => {
     if (lockedMode) return;
@@ -303,7 +303,7 @@ function initLayerFavoritesToolbar() {
     touchStartY = null;
     touchStartedInTrigger = false;
   });
-
+  
   hoverTrigger.addEventListener('mouseenter', showTopBar);
   topBar.addEventListener('mouseenter', showTopBar);
   topBar.addEventListener('mouseleave', hideTopBar);
