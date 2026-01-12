@@ -334,8 +334,8 @@ function initLayerFavoritesToolbar() {
     touchStartedInTrigger = false;
   });
   
-  hoverTrigger.addEventListener('mouseenter', showTopBar);
-  topBar.addEventListener('mouseenter', showTopBar);
+  hoverTrigger.addEventListener('mouseenter', showTopBar, { passive: true });
+  topBar.addEventListener('mouseenter', showTopBar, { passive: true });
   topBar.addEventListener('mouseleave', hideTopBar);
   document.addEventListener('mouseleave', hideTopBar);
   document.addEventListener('click', e => {
