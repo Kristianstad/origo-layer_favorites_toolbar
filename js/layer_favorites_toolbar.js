@@ -87,15 +87,45 @@ function initLayerFavoritesToolbar() {
 
   /* Long press on touch */
   let longPressTimer = null;
-  clearButton.addEventListener('touchstart', (e) => {
-    e.preventDefault();
+  let longPressPointerId = null;
+  let longPressStartY = null;
+
+  clearButton.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch') return;
+    if (longPressPointerId !== null) return; // already tracking one touch
+
+    longPressPointerId = e.pointerId;
+    longPressStartY = e.clientY;
+
     longPressTimer = setTimeout(() => {
       autoClearMode = !autoClearMode;
       saveAutoClearMode();
       updateClearButtonAppearance();
+      longPressPointerId = null;
+      longPressStartY = null;
     }, 500);
-  });
-  clearButton.addEventListener('touchend', () => clearTimeout(longPressTimer));
+  }, { passive: true });
+
+  const cancelLongPress = () => {
+    clearTimeout(longPressTimer);
+    longPressPointerId = null;
+    longPressStartY = null;
+  };
+
+  clearButton.addEventListener('pointerup', e => {
+    if (e.pointerId === longPressPointerId) cancelLongPress();
+  }, { passive: true });
+
+  clearButton.addEventListener('pointercancel', e => {
+    if (e.pointerId === longPressPointerId) cancelLongPress();
+  }, { passive: true });
+
+  clearButton.addEventListener('pointermove', e => {
+    if (longPressPointerId === null || e.pointerId !== longPressPointerId) return;
+    if (Math.abs(e.clientY - longPressStartY) > 10) {
+      cancelLongPress();
+    }
+  }, { passive: true });
 
   /* Dropdown for loading favorites */
   const loadSelect = document.createElement('select');
