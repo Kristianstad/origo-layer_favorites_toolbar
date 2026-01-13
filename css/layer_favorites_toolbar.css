@@ -140,6 +140,10 @@
   min-width: 0;
 }
 
+.top-bar input:hover {
+  background-color: #e0e0e0;
+}
+
 .top-bar input:focus {
   outline: none; /* Remove focus outline */
   border: none; /* Ensure no border on focus */
