@@ -44,7 +44,6 @@ function initLayerFavoritesToolbar() {
   /* LOCK ICON – left of clear button */
   const lockButton = document.createElement('button');
   lockButton.className = 'lock-button';
-  lockButton.title = 'Auto-göm verktygsfältet Lagerfavoriter';
   const lockSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   lockSvg.setAttribute('width', '18');
   lockSvg.setAttribute('height', '18');
