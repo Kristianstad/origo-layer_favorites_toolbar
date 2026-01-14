@@ -20,10 +20,10 @@ function initLayerFavoritesToolbar() {
   const updateClearButtonAppearance = () => {
     if (autoClearMode) {
       clearButton.classList.add('auto-clear-active');
-      clearButton.title = 'Turn off all layers – Auto-clear ON';
+      clearButton.title = 'Släck alla lager - Autosläck PÅ';
     } else {
       clearButton.classList.remove('auto-clear-active');
-      clearButton.title = 'Turn off all layers – Auto-clear OFF';
+      clearButton.title = 'Släck alla lager - Autosläck AV';
     }
   };
 
@@ -44,7 +44,7 @@ function initLayerFavoritesToolbar() {
   /* LOCK ICON – left of clear button */
   const lockButton = document.createElement('button');
   lockButton.className = 'lock-button';
-  lockButton.title = 'Auto-hide the Layer Favorites toolbar';
+  lockButton.title = 'Auto-göm verktygsfältet Lagerfavoriter';
   const lockSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   lockSvg.setAttribute('width', '18');
   lockSvg.setAttribute('height', '18');
@@ -129,15 +129,15 @@ function initLayerFavoritesToolbar() {
 
   /* Dropdown for loading favorites */
   const loadSelect = document.createElement('select');
-  loadSelect.title = 'Select layer favorite to activate';
-  loadSelect.innerHTML = '<option value="">Activate layer favorite...</option>';
+  loadSelect.title = 'Välj lagerfavorit att tända';
+  loadSelect.innerHTML = '<option value="">Tänd lagerfavorit...</option>';
   const updateSelectColor = () => {
     loadSelect.style.color = loadSelect.value === '' ? '#ccc' : '#000';
   };
 
   const updateDropdown = () => {
     const savedIds = JSON.parse(localStorage.getItem(docPrefix + 'savedLayersIds') || '[]');
-    loadSelect.innerHTML = '<option value="">Activate layer favorite...</option>';
+    loadSelect.innerHTML = '<option value="">Tänd lagerfavorit...</option>';
     savedIds.forEach(id => {
       const opt = document.createElement('option');
       opt.value = id;
@@ -161,12 +161,12 @@ function initLayerFavoritesToolbar() {
   /* Input + Save + Delete buttons */
   const saveInput = document.createElement('input');
   saveInput.type = 'text';
-  saveInput.placeholder = 'Layer favorite';
-  saveInput.title = 'Enter layer favorite to create, overwrite or delete';
+  saveInput.placeholder = 'Lagerfavorit';
+  saveInput.title = 'Ange lagerfavorit att skapa, skriva över eller radera';
 
   const saveButton = document.createElement('button');
   saveButton.className = 'save-button';
-  saveButton.title = 'Save/overwrite the specified layer favorite';
+  saveButton.title = 'Spara/skriv över angiven lagerfavorit';
   const saveSvgIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   saveSvgIcon.setAttribute('width', '18');
   saveSvgIcon.setAttribute('height', '18');
@@ -193,7 +193,7 @@ function initLayerFavoritesToolbar() {
 
   const deleteButton = document.createElement('button');
   deleteButton.className = 'delete-button';
-  deleteButton.title = 'Delete the specified layer favorite';
+  deleteButton.title = 'Radera angiven lagerfavorit';
   const deleteSvgIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   deleteSvgIcon.setAttribute('width', '18');
   deleteSvgIcon.setAttribute('height', '18');
@@ -251,12 +251,12 @@ function initLayerFavoritesToolbar() {
       /* LOCKED – closed padlock */
       lockPath.setAttribute('d', 'M18 8h-1V6c0-2.76-2.24-5-5-5s-5 2.24-5 5v2H6c-1.1 0-2 .9-2 2v10c0 1.1 .9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z');
       lockButton.classList.add('locked');
-      lockButton.title = 'Enable auto-hide for the Layer Favorites toolbar';
+      lockButton.title = 'Aktivera auto-göm för verktygsfältet Lagerfavoriter';
     } else {
       /* UNLOCKED – open shackle */
       lockPath.setAttribute('d', 'M19 10h-1V7c0-2.76-2.24-5-5-5s-5 2.24-5 5h2c0-1.66 1.34-3 3-3s3 1.34 3 3v3H5c-1.1 0-2 .9-2 2v8c0 1.1 .9 2 2 2h14c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2zm-7 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z');
       lockButton.classList.remove('locked');
-      lockButton.title = 'Lock the Layer Favorites toolbar in place';
+      lockButton.title = 'Lås fast verktygsfältet Lagerfavoriter';
     }
   };
 
