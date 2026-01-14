@@ -63,7 +63,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: built-compressed-assets
+          name: layerfavorites-compressed-assets
           path: |
             **/*.min.js
             **/*.min.css
