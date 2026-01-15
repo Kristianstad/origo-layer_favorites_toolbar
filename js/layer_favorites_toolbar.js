@@ -1,4 +1,4 @@
-// Layer Favorites Toolbar – Initialization function (called only when viewer is loaded )
+// Layer Favorites Toolbar – Initialization function (called only when viewer is loaded)
 function initLayerFavoritesToolbar() {
   /* Generate document-specific prefix for localStorage keys */
   const docPrefix = location.pathname.replace(/[\/\\]/g, '_') + '_';
