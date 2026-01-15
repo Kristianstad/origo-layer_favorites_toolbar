@@ -1,6 +1,8 @@
 # origo-layer_favorites_toolbar
 Layer favorites plugin for Origo. Adds a slide-down bar at the top of the window where you can save and restore visible map layers.
 
+I use Github actions to minify and compress. Minified and compressed versions of the files are available as downloadable artefacts [here](https://github.com/Kristianstad/origo-layer_favorites_toolbar/actions/workflows/build-compress.yml).
+
 Initialize with:
 `origo.on('load', initLayerFavoritesToolbar());`
 
