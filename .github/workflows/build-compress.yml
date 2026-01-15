@@ -2,6 +2,8 @@ name: Build and Compress Assets
 
 on:
   workflow_dispatch:  # Manuellt triggad via GitHub UI
+  push:               # Lägg till detta temporärt
+    branches: [ main ]
 
 jobs:
   build:
