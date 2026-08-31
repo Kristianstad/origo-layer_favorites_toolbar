@@ -1,5 +1,13 @@
 // Layer Favorites Toolbar – Initialization function (called only when viewer is loaded)
+// Modes: 'layers' (lagerfavoriter) and 'bookmarks' (centrumkoordinat + zoomnivå)
 function initLayerFavoritesToolbar() {
+  if (typeof window.__lftCleanup === 'function') {
+    window.__lftCleanup();
+  }
+
+  const ac = new AbortController();
+  const { signal } = ac;
+
   /* Generate document-specific prefix for localStorage keys */
   const docPrefix = location.pathname.replace(/[\/\\]/g, '_') + '_';
 
@@ -8,6 +16,14 @@ function initLayerFavoritesToolbar() {
 
   /* LOCKED MODE */
   let lockedMode = JSON.parse(localStorage.getItem(docPrefix + 'lockedMode') || 'false');
+
+  /* TOOLBAR MODE: 'layers' | 'bookmarks' */
+  let toolbarMode = localStorage.getItem(docPrefix + 'toolbarMode') === 'bookmarks' ? 'bookmarks' : 'layers';
+
+  const isBookmarks = () => toolbarMode === 'bookmarks';
+
+  const idsKey = () => docPrefix + (isBookmarks() ? 'savedBookmarksIds' : 'savedLayersIds');
+  const itemKey = (id) => docPrefix + (isBookmarks() ? 'savedBookmarks_' : 'savedLayers_') + id;
 
   /* Function to turn off layers */
   const performClear = () => {
@@ -37,12 +53,36 @@ function initLayerFavoritesToolbar() {
     localStorage.setItem(docPrefix + 'lockedMode', JSON.stringify(lockedMode));
   };
 
+  const saveToolbarMode = () => {
+    localStorage.setItem(docPrefix + 'toolbarMode', toolbarMode);
+  };
+
+  const setUseHref = (useEl, href) => {
+    useEl.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', href);
+    useEl.setAttribute('href', href);
+  };
+
   /* Create top-bar */
   const topBar = document.createElement('div');
+  topBar.id = 'layer-favorites-toolbar';
   topBar.className = 'top-bar no-transition';
+
+  /* MODE TOGGLE – far left */
+  const modeButton = document.createElement('button');
+  modeButton.type = 'button';
+  modeButton.className = 'mode-button';
+  const modeSvgIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  modeSvgIcon.setAttribute('width', '18');
+  modeSvgIcon.setAttribute('height', '18');
+  modeSvgIcon.setAttribute('viewBox', '0 0 24 24');
+  const modeUseIcon = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+  setUseHref(modeUseIcon, '#ic_layers_24px');
+  modeSvgIcon.appendChild(modeUseIcon);
+  modeButton.appendChild(modeSvgIcon);
 
   /* LOCK ICON – left of clear button */
   const lockButton = document.createElement('button');
+  lockButton.type = 'button';
   lockButton.className = 'lock-button';
   const lockSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   lockSvg.setAttribute('width', '18');
@@ -54,6 +94,7 @@ function initLayerFavoritesToolbar() {
 
   /* Clear button */
   const clearButton = document.createElement('button');
+  clearButton.type = 'button';
   clearButton.className = 'clear-button';
   const clearSvgIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   clearSvgIcon.setAttribute('width', '18');
@@ -63,18 +104,27 @@ function initLayerFavoritesToolbar() {
   clearSvgIcon.appendChild(clearUseIcon);
   clearButton.appendChild(clearSvgIcon);
 
-  /* Single click: clear layers */
-  clearButton.onclick = () => {
-    performClear();
-  };
-
-  /* Double click / long press: toggle Auto-clear */
+  /* Single click: clear layers (layer mode) or go back (bookmark mode).
+     Double click / long press: toggle Auto-clear without clearing. */
   let clickCount = 0;
   let clickTimer = null;
-  clearButton.addEventListener('click', (e) => {
+  let suppressClick = false;
+
+  clearButton.addEventListener('click', () => {
+    if (suppressClick) {
+      suppressClick = false;
+      return;
+    }
+    if (isBookmarks()) {
+      goBack();
+      return;
+    }
     clickCount++;
     if (clickCount === 1) {
-      clickTimer = setTimeout(() => clickCount = 0, 300);
+      clickTimer = setTimeout(() => {
+        clickCount = 0;
+        performClear();
+      }, 300);
     } else if (clickCount === 2) {
       clearTimeout(clickTimer);
       clickCount = 0;
@@ -82,7 +132,7 @@ function initLayerFavoritesToolbar() {
       saveAutoClearMode();
       updateClearButtonAppearance();
     }
-  });
+  }, { signal });
 
   /* Long press on touch */
   let longPressTimer = null;
@@ -90,6 +140,7 @@ function initLayerFavoritesToolbar() {
   let longPressStartY = null;
 
   clearButton.addEventListener('pointerdown', e => {
+    if (isBookmarks()) return;
     if (e.pointerType !== 'touch') return;
     if (longPressPointerId !== null) return; // already tracking one touch
 
@@ -102,8 +153,9 @@ function initLayerFavoritesToolbar() {
       updateClearButtonAppearance();
       longPressPointerId = null;
       longPressStartY = null;
+      suppressClick = true;
     }, 500);
-  }, { passive: true });
+  }, { passive: true, signal });
 
   const cancelLongPress = () => {
     clearTimeout(longPressTimer);
@@ -113,20 +165,20 @@ function initLayerFavoritesToolbar() {
 
   clearButton.addEventListener('pointerup', e => {
     if (e.pointerId === longPressPointerId) cancelLongPress();
-  }, { passive: true });
+  }, { passive: true, signal });
 
   clearButton.addEventListener('pointercancel', e => {
     if (e.pointerId === longPressPointerId) cancelLongPress();
-  }, { passive: true });
+  }, { passive: true, signal });
 
   clearButton.addEventListener('pointermove', e => {
     if (longPressPointerId === null || e.pointerId !== longPressPointerId) return;
     if (Math.abs(e.clientY - longPressStartY) > 10) {
       cancelLongPress();
     }
-  }, { passive: true });
+  }, { passive: true, signal });
 
-  /* Dropdown for loading favorites */
+  /* Dropdown for loading favorites / bookmarks */
   const loadSelect = document.createElement('select');
   loadSelect.title = 'Välj lagerfavorit att tända';
   loadSelect.innerHTML = '<option value="">Tänd lagerfavorit...</option>';
@@ -134,9 +186,34 @@ function initLayerFavoritesToolbar() {
     loadSelect.style.color = loadSelect.value === '' ? '#ccc' : '#000';
   };
 
+  /* Previous map views — used by the undo button in bookmark mode */
+  const previousViews = [];
+
+  const updateUndoButton = () => {
+    if (!isBookmarks()) return;
+    const hasPrev = previousViews.length > 0;
+    clearButton.disabled = !hasPrev;
+    clearButton.title = hasPrev
+      ? 'Gå tillbaka till föregående plats'
+      : 'Ingen tidigare plats att gå tillbaka till';
+  };
+
+  const goBack = () => {
+    const prev = previousViews.pop();
+    if (!prev) {
+      updateUndoButton();
+      return;
+    }
+    const view = origo.api().getMap().getView();
+    view.setCenter(prev.center);
+    view.setZoom(prev.zoom);
+    updateUndoButton();
+  };
+
   const updateDropdown = () => {
-    const savedIds = JSON.parse(localStorage.getItem(docPrefix + 'savedLayersIds') || '[]');
-    loadSelect.innerHTML = '<option value="">Tänd lagerfavorit...</option>';
+    const emptyLabel = isBookmarks() ? 'Gå till bokmärke...' : 'Tänd lagerfavorit...';
+    const savedIds = JSON.parse(localStorage.getItem(idsKey()) || '[]');
+    loadSelect.innerHTML = '<option value="">' + emptyLabel + '</option>';
     savedIds.forEach(id => {
       const opt = document.createElement('option');
       opt.value = id;
@@ -146,12 +223,37 @@ function initLayerFavoritesToolbar() {
     updateSelectColor();
   };
 
+  const loadBookmark = (id) => {
+    const raw = localStorage.getItem(itemKey(id));
+    if (!raw) return;
+    try {
+      const saved = JSON.parse(raw);
+      if (!saved || !Array.isArray(saved.center) || typeof saved.zoom !== 'number') return;
+      const view = origo.api().getMap().getView();
+      const currentCenter = view.getCenter();
+      const currentZoom = view.getZoom();
+      if (currentCenter && typeof currentZoom === 'number') {
+        previousViews.push({ center: currentCenter.slice(), zoom: currentZoom });
+      }
+      view.setCenter(saved.center);
+      view.setZoom(saved.zoom);
+      updateUndoButton();
+    } catch (err) {
+      /* ignore corrupt bookmark */
+    }
+  };
+
+  const loadLayers = (id) => {
+    if (autoClearMode) performClear();
+    const saved = localStorage.getItem(itemKey(id)) || '';
+    saved.split(',').forEach(name => name && origo.api().getLayer(name)?.setVisible(true));
+  };
+
   loadSelect.onchange = () => {
     const id = loadSelect.value;
     if (id) {
-      if (autoClearMode) performClear();
-      const saved = localStorage.getItem(docPrefix + 'savedLayers_' + id) || '';
-      saved.split(',').forEach(name => name && origo.api().getLayer(name)?.setVisible(true));
+      if (isBookmarks()) loadBookmark(id);
+      else loadLayers(id);
       loadSelect.value = '';
       updateSelectColor();
     }
@@ -162,8 +264,11 @@ function initLayerFavoritesToolbar() {
   saveInput.type = 'text';
   saveInput.placeholder = 'Lagerfavorit';
   saveInput.title = 'Ange lagerfavorit att skapa, skriva över eller radera';
+  saveInput.autocomplete = 'off';
+  saveInput.spellcheck = false;
 
   const saveButton = document.createElement('button');
+  saveButton.type = 'button';
   saveButton.className = 'save-button';
   saveButton.title = 'Spara/skriv över angiven lagerfavorit';
   const saveSvgIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -174,23 +279,36 @@ function initLayerFavoritesToolbar() {
   saveSvgIcon.appendChild(saveUseIcon);
   saveButton.appendChild(saveSvgIcon);
 
+  const rememberId = (id) => {
+    const ids = JSON.parse(localStorage.getItem(idsKey()) || '[]');
+    if (!ids.includes(id)) {
+      ids.push(id);
+      localStorage.setItem(idsKey(), JSON.stringify(ids));
+    }
+  };
+
   saveButton.onclick = () => {
     const id = saveInput.value.trim();
     if (!id) return;
-    const layers = origo.api().getLayersByProperty('visible', true)
-      .filter(l => l.get('group') !== 'background' && l.get('group') !== 'rit' && l.get('name') !== 'measure')
-      .map(l => l.getProperties().name).join(',');
-    localStorage.setItem(docPrefix + 'savedLayers_' + id, layers);
-    const ids = JSON.parse(localStorage.getItem(docPrefix + 'savedLayersIds') || '[]');
-    if (!ids.includes(id)) {
-      ids.push(id);
-      localStorage.setItem(docPrefix + 'savedLayersIds', JSON.stringify(ids));
+    if (isBookmarks()) {
+      const view = origo.api().getMap().getView();
+      const center = view.getCenter();
+      const zoom = view.getZoom();
+      if (!center || typeof zoom !== 'number') return;
+      localStorage.setItem(itemKey(id), JSON.stringify({ center, zoom }));
+    } else {
+      const layers = origo.api().getLayersByProperty('visible', true)
+        .filter(l => l.get('group') !== 'background' && l.get('group') !== 'rit' && l.get('name') !== 'measure')
+        .map(l => l.getProperties().name).join(',');
+      localStorage.setItem(itemKey(id), layers);
     }
+    rememberId(id);
     updateDropdown();
     saveInput.value = '';
   };
 
   const deleteButton = document.createElement('button');
+  deleteButton.type = 'button';
   deleteButton.className = 'delete-button';
   deleteButton.title = 'Radera angiven lagerfavorit';
   const deleteSvgIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -204,9 +322,9 @@ function initLayerFavoritesToolbar() {
   deleteButton.onclick = () => {
     const id = saveInput.value.trim();
     if (!id) return;
-    localStorage.removeItem(docPrefix + 'savedLayers_' + id);
-    const ids = JSON.parse(localStorage.getItem(docPrefix + 'savedLayersIds') || '[]');
-    localStorage.setItem(docPrefix + 'savedLayersIds', JSON.stringify(ids.filter(x => x !== id)));
+    localStorage.removeItem(itemKey(id));
+    const ids = JSON.parse(localStorage.getItem(idsKey()) || '[]');
+    localStorage.setItem(idsKey(), JSON.stringify(ids.filter(x => x !== id)));
     updateDropdown();
     saveInput.value = '';
   };
@@ -216,12 +334,13 @@ function initLayerFavoritesToolbar() {
   leftGroup.className = 'group-container';
   const rightGroup = document.createElement('div');
   rightGroup.className = 'group-container';
-  leftGroup.appendChild(lockButton);
+  leftGroup.appendChild(modeButton);
   leftGroup.appendChild(clearButton);
   leftGroup.appendChild(loadSelect);
   rightGroup.appendChild(saveInput);
   rightGroup.appendChild(saveButton);
   rightGroup.appendChild(deleteButton);
+  rightGroup.appendChild(lockButton);
   topBar.appendChild(leftGroup);
   topBar.appendChild(rightGroup);
   document.body.appendChild(topBar);
@@ -238,7 +357,7 @@ function initLayerFavoritesToolbar() {
     hoverTrigger.style.transform = 'translateX(-50%)';
   };
   updateTrigger();
-  window.addEventListener('resize', updateTrigger);
+  window.addEventListener('resize', updateTrigger, { signal });
 
   setTimeout(() => {
     topBar.className = topBar.className.replace('no-transition', '');
@@ -271,7 +390,7 @@ function initLayerFavoritesToolbar() {
   let hideTimeout = null;
   let lastMouseX = null;
   let lastMouseY = null;
-  document.addEventListener('mousemove', e => { lastMouseX = e.clientX; lastMouseY = e.clientY; });
+  document.addEventListener('mousemove', e => { lastMouseX = e.clientX; lastMouseY = e.clientY; }, { signal });
 
   const hideTopBarAndResetCenter = () => {
     if (lockedMode) return;
@@ -287,25 +406,75 @@ function initLayerFavoritesToolbar() {
 
   const showTopBar = showTopBarAndPushCenter;
 
+  const toolbarControls = [saveInput, saveButton, loadSelect, clearButton, deleteButton, lockButton, modeButton];
+
   const hideTopBar = e => {
     if (lockedMode) return;
     if (e?.relatedTarget && (topBar.contains(e.relatedTarget) || hoverTrigger.contains(e.relatedTarget))) return;
-    if ([saveInput, saveButton, loadSelect, clearButton, deleteButton, lockButton].includes(document.activeElement)) return;
+    if (toolbarControls.includes(document.activeElement)) return;
     hideTimeout = setTimeout(() => {
       if (lastMouseX !== null && document.elementFromPoint(lastMouseX, lastMouseY)?.closest('.top-bar, .hover-trigger')) return;
       hideTopBarAndResetCenter();
     }, 1000);
   };
 
+  const applyMode = () => {
+    const bookmarks = isBookmarks();
+    setUseHref(modeUseIcon, bookmarks ? '#ic_bookmark_24px' : '#ic_layers_24px');
+    modeButton.title = bookmarks
+      ? 'Läge: bokmärken — klicka för lagerfavoriter'
+      : 'Läge: lagerfavoriter — klicka för bokmärken';
+    modeButton.setAttribute('aria-label', modeButton.title);
+    modeButton.setAttribute('aria-pressed', bookmarks ? 'true' : 'false');
+
+    saveInput.placeholder = bookmarks ? 'Bokmärke' : 'Lagerfavorit';
+    saveInput.title = bookmarks
+      ? 'Ange bokmärke att skapa, skriva över eller radera'
+      : 'Ange lagerfavorit att skapa, skriva över eller radera';
+    saveButton.title = bookmarks
+      ? 'Spara/skriv över angivet bokmärke'
+      : 'Spara/skriv över angiven lagerfavorit';
+    deleteButton.title = bookmarks
+      ? 'Radera angivet bokmärke'
+      : 'Radera angiven lagerfavorit';
+    loadSelect.title = bookmarks
+      ? 'Välj bokmärke att gå till'
+      : 'Välj lagerfavorit att tända';
+
+    if (bookmarks) {
+      clearButton.classList.remove('clear-button', 'auto-clear-active');
+      clearButton.classList.add('undo-button');
+      setUseHref(clearUseIcon, '#ic_undo_24px');
+      updateUndoButton();
+    } else {
+      clearButton.classList.remove('undo-button');
+      clearButton.classList.add('clear-button');
+      clearButton.disabled = false;
+      setUseHref(clearUseIcon, '#ic_visibility_off_24px');
+      updateClearButtonAppearance();
+    }
+
+    saveInput.value = '';
+    updateDropdown();
+    updateTrigger();
+    document.dispatchEvent(new CustomEvent('layer-favorites-mode', { detail: { mode: toolbarMode } }));
+  };
+
+  modeButton.onclick = () => {
+    toolbarMode = isBookmarks() ? 'layers' : 'bookmarks';
+    saveToolbarMode();
+    applyMode();
+    showTopBarAndPushCenter();
+  };
+
   /* Event listeners for showing the bar */
-  [clearButton, loadSelect, saveInput, saveButton, deleteButton, lockButton].forEach(el => {
-    el.addEventListener('mouseenter', showTopBar);
-    el.addEventListener('focus', showTopBar);
+  toolbarControls.forEach(el => {
+    el.addEventListener('mouseenter', showTopBar, { signal });
+    el.addEventListener('focus', showTopBar, { signal });
   });
-  loadSelect.addEventListener('mousedown', showTopBar);
-  saveInput.addEventListener('mousedown', showTopBar);
-  topBar.addEventListener('mousemove', showTopBar);
-  lockButton.addEventListener('mouseenter', showTopBar);
+  loadSelect.addEventListener('mousedown', showTopBar, { signal });
+  saveInput.addEventListener('mousedown', showTopBar, { signal });
+  topBar.addEventListener('mousemove', showTopBar, { signal });
 
   let touchStartY = null;
   let touchStartedInTrigger = false;
@@ -314,7 +483,7 @@ function initLayerFavoritesToolbar() {
     touchStartY = t.clientY;
     const r = hoverTrigger.getBoundingClientRect();
     touchStartedInTrigger = t.clientY >= r.top && t.clientY <= r.bottom && t.clientX >= r.left && t.clientX <= r.right;
-  }, { passive: true });
+  }, { passive: true, signal });
 
   document.addEventListener('touchend', e => {
     if (lockedMode) return;
@@ -331,26 +500,36 @@ function initLayerFavoritesToolbar() {
     }
     touchStartY = null;
     touchStartedInTrigger = false;
-  });
-  
-  hoverTrigger.addEventListener('mouseenter', showTopBar, { passive: true });
-  topBar.addEventListener('mouseenter', showTopBar, { passive: true });
-  topBar.addEventListener('mouseleave', hideTopBar);
-  document.addEventListener('mouseleave', hideTopBar);
+  }, { signal });
+
+  hoverTrigger.addEventListener('mouseenter', showTopBar, { passive: true, signal });
+  topBar.addEventListener('mouseenter', showTopBar, { passive: true, signal });
+  topBar.addEventListener('mouseleave', hideTopBar, { signal });
+  document.addEventListener('mouseleave', hideTopBar, { signal });
   document.addEventListener('click', e => {
     if (lockedMode) return;
     if (!topBar.contains(e.target) && document.activeElement !== saveInput) {
       clearTimeout(hideTimeout);
       hideTopBarAndResetCenter();
     }
-  });
+  }, { signal });
 
-  [loadSelect, saveButton, deleteButton].forEach(el => el.addEventListener('change', updateTrigger));
-  [saveButton, deleteButton].forEach(el => el.addEventListener('click', updateTrigger));
+  [loadSelect, saveButton, deleteButton].forEach(el => el.addEventListener('change', updateTrigger, { signal }));
+  [saveButton, deleteButton].forEach(el => el.addEventListener('click', updateTrigger, { signal }));
+
+  window.__lftCleanup = () => {
+    ac.abort();
+    clearTimeout(hideTimeout);
+    clearTimeout(clickTimer);
+    clearTimeout(longPressTimer);
+    topBar.remove();
+    hoverTrigger.remove();
+    window.__lftCleanup = undefined;
+  };
 
   /* Initialisation */
   topBar.className = 'top-bar hidden no-transition';
-  updateDropdown();
+  applyMode();
   updateClearButtonAppearance();
   updateLockButton();
 
