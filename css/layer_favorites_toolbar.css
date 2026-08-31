@@ -23,7 +23,7 @@
   border-bottom-left-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
   box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.2);
-  max-width: 600px; /* Width for big screens */
+  max-width: 680px; /* Extra width for mode button */
 }
 
 .top-bar.hidden {
@@ -34,7 +34,7 @@
   transition: none !important;
 }
 
-/* Container for left group (clearButton + loadSelect) and right group (saveInput + saveButton + deleteButton) */
+/* Container for left group (mode + clear/undo + loadSelect) and right group (saveInput + saveButton + deleteButton + lock) */
 .group-container {
   display: flex;
   gap: 8px; /* Spacing between elements */
@@ -53,6 +53,7 @@
   border-radius: 50%; /* Circular buttons */
   box-sizing: border-box;
   min-width: 34px; /* Adjusted for smaller icons */
+  flex-shrink: 0;
 }
 
 .top-bar button:hover {
@@ -98,7 +99,9 @@
 /* Apply fill to all button SVGs */
 .top-bar button.clear-button svg,
 .top-bar button.save-button svg,
-.top-bar button.delete-button svg {
+.top-bar button.delete-button svg,
+.top-bar button.mode-button svg,
+.top-bar button.undo-button svg {
   fill: #4a4a4a;
 }
 
@@ -166,7 +169,7 @@
   .top-bar {
     padding: 6px;
     gap: 8px;
-    max-width: 360px; /* Accommodates buttons */
+    max-width: 400px; /* Accommodates extra mode button */
     width: calc(100% - 12px); /* Respect 6px left + right padding */
     justify-content: center;
   }
@@ -191,7 +194,7 @@
     font-size: 14px;
     border: none;
     border-radius: 2em;
-    max-width: 130px; /* Balances group widths */
+    max-width: 120px; /* Balances group widths with extra mode button */
   }
 
   .top-bar select option[value=""] {
@@ -226,7 +229,7 @@
     padding: 6px;
     gap: 6px;
     width: calc(100% - 12px); /* Respect 6px left + right padding */
-    max-width: 320px; /* Accommodates buttons */
+    max-width: 360px; /* Accommodates extra mode button */
   }
 
   .group-container {
@@ -245,7 +248,7 @@
   .top-bar select {
     padding: 2px 10px;
     font-size: 12px;
-    max-width: 110px; /* Balances group widths */
+    max-width: 100px; /* Balances group widths with extra mode button */
   }
 
   .top-bar input {
@@ -283,7 +286,7 @@
   top: 3.5rem;
 }
 
-/* LÅSIKON – till vänster om släckknappen */
+/* LÅSIKON – längst till höger */
 .top-bar .lock-button {
   display: flex;
   justify-content: center;
@@ -327,4 +330,51 @@
   .top-bar .lock-button {
     display: none !important;
   }
+}
+
+/* LÄGESKNAPP – längst till vänster (lagerfavoriter / bokmärken) */
+.top-bar .mode-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  background-color: #f5f5f5;
+  color: #000;
+  border-radius: 50%;
+  box-sizing: border-box;
+  min-width: 34px;
+}
+
+.top-bar .mode-button:hover {
+  background-color: #e0e0e0;
+}
+
+.top-bar .mode-button svg {
+  width: 18px;
+  height: 18px;
+  fill: #4a4a4a;
+}
+
+/* BAKÅT-KNAPP – ersätter släckknappen i bokmärkesläge */
+.top-bar button.undo-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.top-bar button.undo-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.top-bar button.undo-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.top-bar button.undo-button:disabled:hover {
+  background-color: #f5f5f5;
 }
