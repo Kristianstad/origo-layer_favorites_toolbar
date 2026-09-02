@@ -16,7 +16,7 @@
   padding: 8px; /* Updated padding for desktop */
   display: flex;
   flex-wrap: wrap;
-  gap: 12px; /* Spacing between groups */
+  gap: 8px; /* Spacing between groups */
   transition: transform 0.3s ease-in-out;
   z-index: 1000;
   box-sizing: border-box;
@@ -171,7 +171,7 @@
 @media screen and (max-width: 768px) {
   .top-bar {
     padding: 6px;
-    gap: 8px;
+    gap: 6px;
     max-width: 400px; /* Accommodates extra mode button */
     width: calc(100% - 12px); /* Respect 6px left + right padding */
     justify-content: center;
@@ -230,7 +230,7 @@
 @media screen and (max-width: 400px) {
   .top-bar {
     padding: 6px;
-    gap: 6px;
+    gap: 4px;
     width: calc(100% - 12px); /* Respect 6px left + right padding */
     max-width: 360px; /* Accommodates extra mode button */
   }
