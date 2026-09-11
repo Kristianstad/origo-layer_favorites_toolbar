@@ -6,7 +6,7 @@ Minified and compressed versions of the files are available [here](https://night
 Initialize with:
 `origo.on('load', initLayerFavoritesToolbar());`
 
-<img width="1140" height="190" alt="c46f689c-dbf0-4e07-b7f9-93c061d9926a" src="https://github.com/user-attachments/assets/0045ac91-d2de-40ed-bebb-726582c4cc23" />
+<img width="765" height="112" alt="image" src="https://github.com/user-attachments/assets/1096f6c5-f90d-43d4-b063-965803e1f57d" />
 
 # Lagerfavorit
 Du kan skapa en egen lagerfavorit med lager som du brukar använda. Verktyget kommer man åt genom att föra muspekaren längst upp i kartfönstret, strax ovanför sökfältet. Du kan låsa fast verktygsfältet genom att klicka på *Lås fast verktygsfältet Lagerfavoriter*.
