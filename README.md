@@ -6,4 +6,30 @@ Minified and compressed versions of the files are available [here](https://night
 Initialize with:
 `origo.on('load', initLayerFavoritesToolbar());`
 
-Nu finns det ett verktyg för att spara och tända lagerkombinationer och platser som används ofta. Vi kallar det för lagerfavoriter/bokmärken och verktyget kommer man åt genom att föra muspekaren längst upp i kartfönstret, strax ovanför sökfältet (eller dra ned på mobil). Tänd lagerkombinationen som du vill spara, ge lagerfavoriten ett unikt namn och klicka på spara. Man kan förhindra att lagerfavoritverktyget hela tiden gömmer sig genom att klicka på låsikonen. Det finns även ett "Autosläck"-läge som, när det är aktiverat, alltid släcker alla tända lager när man tänder en lagerfavorit. Autosläck-läget aktiveras genom att dubbelklicka på släck lager-ikonen (långklick på mobil).
+<img width="1140" height="190" alt="c46f689c-dbf0-4e07-b7f9-93c061d9926a" src="https://github.com/user-attachments/assets/0045ac91-d2de-40ed-bebb-726582c4cc23" />
+
+# Lagerfavorit
+Du kan skapa en egen lagerfavorit med lager som du brukar använda. Verktyget kommer man åt genom att föra muspekaren längst upp i kartfönstret, strax ovanför sökfältet. Du kan låsa fast verktygsfältet genom att klicka på *Lås fast verktygsfältet Lagerfavoriter*.
+
+## Skapa en lagerfavorit
+
+- tänd de lager du vill skapa en favorit av
+- döp lagerfavoriten i rutan *Lagerfavorit*
+- klicka på *Spara/skriv över lagerfavoriten*
+- lagerfavoriten finns nu att välja i rullistan *Tänd lagerfavorit…*
+
+## Redigera en lagerfavorit
+
+- tänd/släck de lager som du vill justera i en befintlig favorit
+- skriv in namnet på lagerfavoriten i rutan *Lagerfavorit*
+- klicka på *Spara/skriv över lagerfavoriten*
+
+## Ta bort en lagerfavorit
+
+- skriv in namnet på lagerfavoriten i rutan *Lagerfavorit*
+- klicka på *Radera angiven lagerfavorit*
+
+## Släck och autosläck
+
+- klicka på *Släck alla lager* för att släcka alla tända lager
+- dubbelklicka på *Släck alla lager* för att aktivera funktionen som gör att alla andra tända lager släcks varje gång en lagerfavorit tänds.
