@@ -344,21 +344,21 @@
   font-size: 16px;
   cursor: pointer;
   border: none;
-  background-color: #f5f5f5;
-  color: #000;
+  background-color: #333;
+  color: #fff;
   border-radius: 50%;
   box-sizing: border-box;
   min-width: 34px;
 }
 
 .top-bar .mode-button:hover {
-  background-color: #e0e0e0;
+  background-color: #555;
 }
 
 .top-bar .mode-button svg {
   width: 18px;
   height: 18px;
-  fill: #4a4a4a;
+  fill: #fff !important;
 }
 
 /* BAKÅT-KNAPP – ersätter släckknappen i bokmärkesläge */
