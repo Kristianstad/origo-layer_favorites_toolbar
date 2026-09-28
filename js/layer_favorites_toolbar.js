@@ -17,10 +17,14 @@ function initLayerFavoritesToolbar() {
   let toolbarMode = localStorage.getItem(docPrefix + 'toolbarMode') === 'bookmarks' ? 'bookmarks' : 'layers';
 
   const isBookmarks = () => toolbarMode === 'bookmarks';
-  const idsKey = () => docPrefix + (isBookmarks() ? 'savedBookmarksIds' : 'savedLayersIds');
-  const itemKey = (id) => docPrefix + (isBookmarks() ? 'savedBookmarks_' : 'savedLayers_') + id;
+  const idsKeyFor = (kind) => docPrefix + (kind === 'bookmarks' ? 'savedBookmarksIds' : 'savedLayersIds');
+  const itemKeyFor = (kind, id) => docPrefix + (kind === 'bookmarks' ? 'savedBookmarks_' : 'savedLayers_') + id;
+  const currentKind = () => (isBookmarks() ? 'bookmarks' : 'layers');
+  const idsKey = () => idsKeyFor(currentKind());
+  const itemKey = (id) => itemKeyFor(currentKind(), id);
   const persist = (key, value) => localStorage.setItem(docPrefix + key, value);
-  const readIds = () => JSON.parse(localStorage.getItem(idsKey()) || '[]');
+  const readIdsFor = (kind) => JSON.parse(localStorage.getItem(idsKeyFor(kind)) || '[]');
+  const readIds = () => readIdsFor(currentKind());
 
   const isOverlayLayer = (layer) =>
     layer.get('group') !== 'background' && layer.get('group') !== 'rit' && layer.get('name') !== 'measure';
@@ -260,7 +264,187 @@ function initLayerFavoritesToolbar() {
     }
   };
 
-  saveButton.onclick = () => {
+  const FORMAT = 'origo-layer-favorites-toolbar';
+
+  const uniqueName = (name, taken) => {
+    const base = String(name || '').trim() || 'Namnlös';
+    if (!taken.has(base)) {
+      taken.add(base);
+      return base;
+    }
+    let n = 2;
+    let candidate;
+    do {
+      candidate = base + ' (' + n + ')';
+      n += 1;
+    } while (taken.has(candidate));
+    taken.add(candidate);
+    return candidate;
+  };
+
+  const collectBookmarks = () => {
+    const items = [];
+    readIdsFor('bookmarks').forEach((id) => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(itemKeyFor('bookmarks', id)) || 'null');
+        if (saved && Array.isArray(saved.center) && typeof saved.zoom === 'number') {
+          items.push({ name: id, center: saved.center, zoom: saved.zoom });
+        }
+      } catch {
+        /* skip corrupt */
+      }
+    });
+    return items;
+  };
+
+  const collectLayers = () => {
+    const items = [];
+    readIdsFor('layers').forEach((id) => {
+      const raw = localStorage.getItem(itemKeyFor('layers', id));
+      if (!raw) return;
+      const layers = raw.split(',').map((s) => s.trim()).filter(Boolean);
+      if (layers.length) items.push({ name: id, layers });
+    });
+    return items;
+  };
+
+  const fallbackDownload = (filename, blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    a.style.position = 'fixed';
+    a.style.left = '-9999px';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      a.remove();
+      URL.revokeObjectURL(url);
+    }, 2500);
+  };
+
+  const downloadJson = (filename, payload) => {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const canPick = typeof window.showSaveFilePicker === 'function'
+      && window.isSecureContext
+      && window.self === window.top;
+    if (!canPick) {
+      fallbackDownload(filename, blob);
+      return;
+    }
+    try {
+      window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{
+          description: 'JSON-fil',
+          accept: { 'application/json': ['.json'] }
+        }]
+      }).then((handle) => handle.createWritable())
+        .then(async (writable) => {
+          await writable.write(blob);
+          await writable.close();
+        })
+        .catch((err) => {
+          if (err && err.name === 'AbortError') return;
+          fallbackDownload(filename, blob);
+        });
+    } catch {
+      fallbackDownload(filename, blob);
+    }
+  };
+
+  const dateStamp = () => new Date().toISOString().slice(0, 10);
+
+  const exportBookmarks = () => {
+    downloadJson('bokmarken-' + dateStamp() + '.json', {
+      format: FORMAT,
+      version: 1,
+      bookmarks: collectBookmarks(),
+    });
+  };
+
+  const exportLayers = () => {
+    downloadJson('lagerfavoriter-' + dateStamp() + '.json', {
+      format: FORMAT,
+      version: 1,
+      layers: collectLayers(),
+    });
+  };
+
+  const parseLayerList = (value) => {
+    if (Array.isArray(value)) return value.map((s) => String(s).trim()).filter(Boolean).join(',');
+    if (typeof value === 'string') return value.split(',').map((s) => s.trim()).filter(Boolean).join(',');
+    return '';
+  };
+
+  const importKind = (kind, entries) => {
+    if (!Array.isArray(entries)) return 0;
+    const ids = readIdsFor(kind);
+    const taken = new Set(ids);
+    let added = 0;
+    entries.forEach((entry) => {
+      if (!entry || typeof entry !== 'object') return;
+      let value;
+      if (kind === 'bookmarks') {
+        if (!Array.isArray(entry.center) || entry.center.length < 2 || typeof entry.zoom !== 'number') return;
+        value = JSON.stringify({ center: entry.center, zoom: entry.zoom });
+      } else {
+        const layers = parseLayerList(entry.layers);
+        if (!layers) return;
+        value = layers;
+      }
+      const name = uniqueName(entry.name || entry.id, taken);
+      localStorage.setItem(itemKeyFor(kind, name), value);
+      ids.push(name);
+      added += 1;
+    });
+    localStorage.setItem(idsKeyFor(kind), JSON.stringify(ids));
+    return added;
+  };
+
+  const importFromObject = (data) => {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error('invalid');
+    }
+    const result = {
+      bookmarks: importKind('bookmarks', data.bookmarks),
+      layers: importKind('layers', data.layers),
+    };
+    updateDropdown();
+    return result;
+  };
+
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'application/json,.json';
+  fileInput.style.display = 'none';
+  document.body.appendChild(fileInput);
+
+  const startImport = () => {
+    fileInput.value = '';
+    fileInput.click();
+  };
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result || ''));
+        const result = importFromObject(data);
+        if (result.bookmarks + result.layers === 0) {
+          window.alert('Inga bokmärken eller lagerfavoriter hittades i filen.');
+        }
+      } catch {
+        window.alert('Kunde inte läsa filen. Kontrollera att det är en giltig export.');
+      }
+    };
+    reader.readAsText(file);
+  }, { signal });
+
+  const performSave = () => {
     const id = saveInput.value.trim();
     if (!id) return;
     if (isBookmarks()) {
@@ -295,6 +479,38 @@ function initLayerFavoritesToolbar() {
   rightGroup.append(saveInput, saveButton, deleteButton, lockButton);
   topBar.append(leftGroup, rightGroup);
   document.body.appendChild(topBar);
+
+  const menu = document.createElement('div');
+  menu.className = 'lft-menu';
+  menu.setAttribute('role', 'menu');
+
+  const closeMenu = () => {
+    menu.classList.remove('open');
+  };
+
+  const openMenu = () => {
+    menu.classList.add('open');
+    showTopBarAndPushCenter();
+  };
+
+  const addMenuItem = (label, onClick) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'lft-menu-item';
+    item.setAttribute('role', 'menuitem');
+    item.textContent = label;
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeMenu();
+      onClick();
+    }, { signal });
+    menu.appendChild(item);
+  };
+
+  addMenuItem('Importera bokmärken/lagerfavoriter', startImport);
+  addMenuItem('Exportera bokmärken', exportBookmarks);
+  addMenuItem('Exportera lagerfavoriter', exportLayers);
+  topBar.appendChild(menu);
 
   const hoverTrigger = document.createElement('div');
   hoverTrigger.className = 'hover-trigger';
@@ -342,6 +558,7 @@ function initLayerFavoritesToolbar() {
 
   const hideTopBarAndResetCenter = () => {
     if (lockedMode) return;
+    closeMenu();
     topBar.classList.add('hidden');
     document.querySelector('.o-ui .top-center')?.classList.remove('top-bar-visible');
   };
@@ -379,8 +596,8 @@ function initLayerFavoritesToolbar() {
       ? 'Ange bokmärke att skapa, skriva över eller radera'
       : 'Ange lagerfavorit att skapa, skriva över eller radera';
     saveButton.title = bookmarks
-      ? 'Spara/skriv över angivet bokmärke'
-      : 'Spara/skriv över angiven lagerfavorit';
+      ? 'Spara/skriv över angivet bokmärke (dubbelklicka för import/export)'
+      : 'Spara/skriv över angiven lagerfavorit (dubbelklicka för import/export)';
     deleteButton.title = bookmarks
       ? 'Radera angivet bokmärke'
       : 'Radera angiven lagerfavorit';
@@ -407,12 +624,76 @@ function initLayerFavoritesToolbar() {
     document.dispatchEvent(new CustomEvent('layer-favorites-mode', { detail: { mode: toolbarMode } }));
   };
 
-  modeButton.onclick = () => {
+  const toggleMode = () => {
     toolbarMode = isBookmarks() ? 'layers' : 'bookmarks';
     persist('toolbarMode', toolbarMode);
     applyMode();
     showTopBarAndPushCenter();
   };
+
+  modeButton.onclick = () => {
+    closeMenu();
+    toggleMode();
+  };
+
+  let saveClickCount = 0;
+  let saveClickTimer = null;
+  let saveSuppressClick = false;
+
+  saveButton.addEventListener('click', () => {
+    if (saveSuppressClick) {
+      saveSuppressClick = false;
+      return;
+    }
+    saveClickCount += 1;
+    if (saveClickCount === 1) {
+      saveClickTimer = setTimeout(() => {
+        saveClickCount = 0;
+        closeMenu();
+        performSave();
+      }, 300);
+    } else if (saveClickCount === 2) {
+      clearTimeout(saveClickTimer);
+      saveClickCount = 0;
+      openMenu();
+    }
+  }, { signal });
+
+  let saveLongTimer = null;
+  let saveLongPointerId = null;
+  let saveLongStartY = null;
+
+  const cancelSaveLong = () => {
+    clearTimeout(saveLongTimer);
+    saveLongPointerId = null;
+    saveLongStartY = null;
+  };
+
+  saveButton.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') return;
+    if (saveLongPointerId !== null) return;
+    saveLongPointerId = e.pointerId;
+    saveLongStartY = e.clientY;
+    saveLongTimer = setTimeout(() => {
+      saveLongPointerId = null;
+      saveLongStartY = null;
+      saveSuppressClick = true;
+      openMenu();
+    }, 500);
+  }, { passive: true, signal });
+
+  saveButton.addEventListener('pointerup', (e) => {
+    if (e.pointerId === saveLongPointerId) cancelSaveLong();
+  }, { passive: true, signal });
+
+  saveButton.addEventListener('pointercancel', (e) => {
+    if (e.pointerId === saveLongPointerId) cancelSaveLong();
+  }, { passive: true, signal });
+
+  saveButton.addEventListener('pointermove', (e) => {
+    if (saveLongPointerId === null || e.pointerId !== saveLongPointerId) return;
+    if (Math.abs(e.clientY - saveLongStartY) > 10) cancelSaveLong();
+  }, { passive: true, signal });
 
   toolbarControls.forEach((el) => {
     el.addEventListener('mouseenter', showTopBar, { signal });
@@ -453,6 +734,7 @@ function initLayerFavoritesToolbar() {
   topBar.addEventListener('mouseleave', hideTopBar, { signal });
   document.addEventListener('mouseleave', hideTopBar, { signal });
   document.addEventListener('click', (e) => {
+    if (!topBar.contains(e.target)) closeMenu();
     if (lockedMode) return;
     if (!topBar.contains(e.target) && document.activeElement !== saveInput) {
       clearTimeout(hideTimeout);
@@ -468,6 +750,9 @@ function initLayerFavoritesToolbar() {
     clearTimeout(hideTimeout);
     clearTimeout(clickTimer);
     clearTimeout(longPressTimer);
+    clearTimeout(saveClickTimer);
+    clearTimeout(saveLongTimer);
+    fileInput.remove();
     topBar.remove();
     hoverTrigger.remove();
     window.__lftCleanup = undefined;
